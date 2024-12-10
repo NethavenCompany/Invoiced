@@ -1,0 +1,98 @@
+{% import 'codeeditor/codeEditor' as codeEditor %}
+
+{% extends 'invoiced/_layouts/index' %}
+
+{% set elementType = 'nethaven\\invoiced\\elements\\InvoiceTemplate' %}
+{% set templateId = craft.app.request.segment(5) %}
+
+{% if templateId %}
+    {% set template = craft.invoiced.getInvoiceTemplateById(templateId) %}
+{% else %}
+    {% set template = null %}
+{% endif %}
+
+
+{% set selectedSubnavItem = craft.app.request.segment(2) %}
+{% set title = templateId ? 'Edit invoice template' : 'New invoice template' %}
+
+{% set crumbs = [
+    { label: craft.invoiced.getPluginName(), url: url('invoiced') },
+    { label: 'Settings', url: url('invoiced/settings') },
+    { label: 'Invoice Templates', url: url('invoiced/settings/invoice-templates') },
+    { 
+        label: templateId ? 'Edit Template' : 'New Template', 
+        url: templateId ? url('invoiced/settings/invoice-templates/edit/' ~ templateId) : url('invoiced/settings/invoice-templates/new')
+    },
+] %}
+
+
+{% set monacoOptions = {
+    language: 'html',
+    theme: 'vs-dark',
+    lineNumbers: 'on',
+    lineNumbersMinChars: 4,
+    lineDecorationsWidth: 6,
+    folding: true,
+} %}
+
+{% set codeEditorOptions = {
+    wrapperClass: 'monaco-editor-background-frame'
+} %}
+
+{% block content %}
+    <div id="invoice-template-editor">
+        <form method="post" action="{{ url('invoiced/invoice-template/save-template/') }}">
+            {{ csrfInput() }}
+            {{ redirectInput('invoiced/settings/invoice-templates') }}
+
+            {% if templateId %}
+                <input type="hidden" name="id" value="{{ templateId }}">
+                <input type="hidden" name="sortOrder" value="{{ sortOrder }}">
+            {% endif %}
+            
+            <div class="field">
+                <div class="heading">
+                    <label for="name">
+                        Template Name
+                        <span class="visually-hidden">Required</span>
+                        <span class="required" aria-hidden="true"></span>
+                    </label>
+                </div>
+                <div class="input ltr">
+                    <input type="text" id="name" name="name" value="{{ template.name ?? '' }}" class="text fullwidth" required>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="heading">
+                    <label for="handle">
+                        Template Handle
+                        <span class="visually-hidden">Required</span>
+                        <span class="required" aria-hidden="true"></span>
+                    </label>
+                </div>
+                <div class="input ltr">
+                    <input type="text" id="handle" name="handle" value="{{ template.handle ?? '' }}" class="text fullwidth" onfocus="this.setAttribute('data-original', this.value);" onblur="if (this.value == '') { this.value = this.getAttribute('data-original'); }" required>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="input ltr">
+                    {{ codeEditor.textareaField({
+                        label: "Template",
+                        instructions: "Enter your HTML here.",
+                        id: 'templateHtml',
+                        name: 'templateHtml',
+                        value: template.template ?? '<style>\n</style>\n<body>\n</body>',
+                        rows: 15,
+                        required: true
+                    }, 'CodeField', monacoOptions, codeEditorOptions) }}
+                </div>
+            </div>
+
+            <div class="buttons">
+                <input type="submit" class="btn submit" value="{{ template ? 'Save Changes' : 'Create Template' }}">
+            </div>
+        </form>
+    </div>
+{% endblock %}

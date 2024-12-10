@@ -11,6 +11,35 @@
 {% endblock %}
 
 {% block content %}
-	<div id="invoice-templates-vue-admin-table"></div>
-{% endblock %}
 
+    {% set templates = craft.invoiced.getInvoiceTemplates() %}
+    
+    {% if templates|length %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Handle</th>
+                    <th>Template</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for template in templates %}
+                    <tr>
+                        <td>
+                            <a href="{{ url('invoiced/settings/invoice-templates/edit/' ~ template.id) }}">{{ template.name }}</a>
+                        </td>
+                        <td><code>{{ template.handle }}</code></td>
+                        <td>{{ template.template }}</td>
+                        <td class="thin">
+                            <a class="delete icon" title="Delete" role="button"></a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="light">No invoice templates exist yet.</p>
+    {% endif %}
+{% endblock %}

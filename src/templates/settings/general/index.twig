@@ -1,0 +1,52 @@
+{% extends 'invoiced/_layouts/settings' %}
+
+{% import '_includes/forms' as forms %}
+
+{% set crumbs = [
+    { label: craft.invoiced.getPluginName(), url: url('invoiced') },
+    { label: 'Settings', url: url('invoiced/settings') },
+    { label: 'Invoices', url: url('invoiced/settings/general') },
+] %}
+
+{% set templates = craft.invoiced.getInvoiceTemplates() %}
+{% set templateOptions = [] %}
+
+{% for template in templates %}
+    {% set templateOptions = templateOptions|merge([{ label: template.name, value: template.id }]) %}
+{% endfor %}
+
+{% block content %}
+
+	<h2>{{ 'General settings' }}</h2>
+
+	<form method="post" action="{{ url('invoiced/settings/save-settings') }}">
+		{{ redirectInput('invoiced/settings/general') }}
+		{{ csrfInput() }}
+
+		{% namespace 'settings' %}
+		{% if templateOptions|length %}
+			{{ forms.selectField({
+                first: true,
+                label: 'Default Invoice Template',
+                instructions: 'Select a Invoice Template to be used as the default for all new invoices.',
+                name: 'defaultInvoiceTemplate',
+                options: templateOptions,
+            }) }}
+		{% else %}
+        <div class="field">
+            <div class="heading">
+                <label>Default Invoice Template</label>
+            </div>
+            <div class="instructions">
+			    <p>No invoice templates exist yet.</p>
+            </div>
+        </div>
+		{% endif %}
+		{% endnamespace %}
+
+		<hr>
+
+		<input type="submit" class="btn submit" value="{{ 'Save' }}">
+	</form>
+
+{% endblock %}

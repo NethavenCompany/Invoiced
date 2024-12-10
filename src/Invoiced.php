@@ -18,7 +18,7 @@ class Invoiced extends Plugin
 
     public static Invoiced $plugin;
     public bool $hasCpSection = true;
-    public string $schemaVersion = 'dev-main';
+    public string $schemaVersion = '1.0.0';
     public string $pluginName = "Invoiced";
 
 

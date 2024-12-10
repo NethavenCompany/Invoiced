@@ -1,6 +1,6 @@
 # Invoice Manager
 
-A extension to the cms to create invoices from html templates and turn them into pdf files for your clients
+A extension to the cms to create invoices from html templates saving them on your craft db to be managed.
 
 ## Requirements
 

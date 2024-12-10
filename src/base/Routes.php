@@ -26,6 +26,11 @@ trait Routes
                 $event->rules['invoiced/invoices'] = [ 'template' => 'invoiced/invoices'];
                 $event->rules['invoiced/invoices/new'] = [ 'template' => 'invoiced/invoices/_edit'];
 
+                $event->rules['invoiced/settings/invoice-templates/new'] = [ 'template' => 'invoiced/settings/invoice-templates/_edit'];
+                $event->rules['invoiced/settings/invoice-templates/edit/<id:\d+>'] = [ 'template' => 'invoiced/settings/invoice-templates/_edit'];
+
+                $event->rules['invoiced/invoice-template/save-template'] = 'invoiced/invoice-template/save';
+                $event->rules['invoiced/invoice-template/save-template/<id:\d+>'] = 'invoiced/invoice-template/edit';
             }
         );
     }

@@ -1,7 +1,7 @@
 <?php
 namespace nethaven\invoiced\models;
 
-use nethaven\invoiced\elements\Invoice;
+use nethaven\invoiced\elements\Invoice as InvoiceElement;
 use nethaven\invoiced\Invoiced;
 
 use Craft;
@@ -31,7 +31,7 @@ class InvoiceSettings extends Model
     // Private Properties
     // =========================================================================
 
-    private ?Invoice $_invoice = null;
+    private ?InvoiceElement $_invoice = null;
 
 
     // Public Methods
@@ -51,7 +51,7 @@ class InvoiceSettings extends Model
         $settings = Invoiced::$plugin->getSettings();
     }
 
-    public function getInvoice(): ?Invoice
+    public function getInvoice(): ?InvoiceElement
     {
         return $this->_invoice;
     }

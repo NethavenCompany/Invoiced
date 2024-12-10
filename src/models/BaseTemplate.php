@@ -69,43 +69,43 @@ abstract class BaseTemplate extends Model
         $rules = parent::defineRules();
 
         $rules[] = [['name', 'handle'], 'required'];
-        $rules[] = [['name', 'handle', 'template'], 'string', 'max' => 255];
+        $rules[] = [['name', 'handle'], 'string', 'max' => 255];
         $rules[] = [
             ['handle'],
             HandleValidator::class,
-            'reservedWords' => ['id', 'dateCreated', 'dateUpdated', 'uid', 'title'],
+            'reservedWords' => ['id', 'dateCreated', 'dateUpdated', 'uid'],
         ];
         $rules[] = [
             ['handle'],
             UniqueValidator::class,
             'targetClass' => $this->getRecordClass(),
         ];
-        $rules[] = [
-            'template', function($attribute, $params, Validator $validator) {
-                $templatesPath = Craft::$app->getPath()->getSiteTemplatesPath();
+        // $rules[] = [
+        //     'template', function($attribute, $params, Validator $validator) {
+        //         $templatesPath = Craft::$app->getPath()->getSiteTemplatesPath();
 
-                $view = Craft::$app->getView();
-                $oldTemplatesPath = $view->getTemplatesPath();
-                $view->setTemplatesPath($templatesPath);
+        //         $view = Craft::$app->getView();
+        //         $oldTemplatesPath = $view->getTemplatesPath();
+        //         $view->setTemplatesPath($templatesPath);
 
-                // Check how to validate templates
-                if ($this->hasSingleTemplate) {
-                    if (!$view->doesTemplateExist($this->$attribute)) {
-                        // Check for the template across multiple base paths
-                        if (!FileHelper::doesSitePathExist($this->$attribute)) {
-                            $validator->addError($this, $attribute, 'The template does not exist.');
-                        }
-                    }
-                } else {
-                    // Check for the template across multiple base paths
-                    if (!FileHelper::doesSitePathExist($this->$attribute)) {
-                        $validator->addError($this, $attribute, 'The template directory does not exist.');
-                    }
-                }
+        //         // Check how to validate templates
+        //         if ($this->hasSingleTemplate) {
+        //             if (!$view->doesTemplateExist($this->$attribute)) {
+        //                 // Check for the template across multiple base paths
+        //                 if (!FileHelper::doesSitePathExist($this->$attribute)) {
+        //                     $validator->addError($this, $attribute, 'The template does not exist.');
+        //                 }
+        //             }
+        //         } else {
+        //             // Check for the template across multiple base paths
+        //             if (!FileHelper::doesSitePathExist($this->$attribute)) {
+        //                 $validator->addError($this, $attribute, 'The template directory does not exist.');
+        //             }
+        //         }
 
-                $view->setTemplatesPath($oldTemplatesPath);
-            },
-        ];
+        //         $view->setTemplatesPath($oldTemplatesPath);
+        //     },
+        // ];
 
         return $rules;
     }

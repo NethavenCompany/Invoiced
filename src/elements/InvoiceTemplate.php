@@ -1,9 +1,9 @@
 <?php
 namespace nethaven\invoiced\elements;
 
-use nethaven\invoiced\elements\db\InvoiceQuery;
+use nethaven\invoiced\elements\db\InvoiceTemplateQuery;
 use nethaven\invoiced\Invoiced;
-use nethaven\invoiced\records\InvoiceTemplate;
+use nethaven\invoiced\records\InvoiceTemplate as InoiceTemplateRecord;
 use nethaven\invoiced\models\InvoiceSettings;
 
 use Craft;
@@ -16,7 +16,7 @@ use craft\helpers\UrlHelper;
 use craft\behaviors\FieldLayoutBehavior;
 use craft\models\FieldLayout as CraftFieldLayout;
 
-class Invoice extends Element
+class InvoiceTemplate extends Element
 {
     // Constants
     // =========================================================================
@@ -46,14 +46,6 @@ class Invoice extends Element
     /**
      * @inheritDoc
      */
-    public static function hasTitles(): bool
-    {
-        return true;
-    }
-
-    /**
-     * @inheritDoc
-     */
     public static function hasContent(): bool
     {
         return true;
@@ -70,9 +62,9 @@ class Invoice extends Element
     /**
      * @inheritDoc
      */
-    public static function find(): InvoiceQuery
+    public static function find(): InvoiceTemplateQuery
     {
-        return new InvoiceQuery(static::class);
+        return new InvoiceTemplateQuery(static::class);
     }
 
     /**
@@ -84,7 +76,7 @@ class Invoice extends Element
             [
                 'key' => '*',
                 'label' => 'All invoices',
-                'defaultSort' => ['title', 'desc'],
+                'defaultSort' => ['name', 'desc'],
             ],
         ];
 
@@ -97,12 +89,12 @@ class Invoice extends Element
     protected static function defineTableAttributes(): array
     {
         return [
-            'title' => ['label' => 'Title'],
-            'id' => ['label' => 'ID'],
-            'handle' => ['label' => 'Handle'],
-            'template' => ['label' => 'Template'],
-            'dateCreated' => ['label' => 'Date Created'],
-            'dateUpdated' => ['label' => 'Date Updated'],
+            'name' => ['label' => Craft::t('app', 'Name')],
+            'id' => ['label' => Craft::t('app', 'ID')],
+            'handle' => ['label' => Craft::t('app', 'Handle')],
+            'templateHtml' => ['label' => Craft::t('app', 'Template')],
+            'dateCreated' => ['label' => Craft::t('app', 'Date Created')],
+            'dateUpdated' => ['label' => Craft::t('app', 'Date Updated')],
         ];
     }
 
@@ -112,11 +104,14 @@ class Invoice extends Element
     protected static function defineDefaultTableAttributes(string $source): array
     {
         $attributes = [];
-        $attributes[] = 'title';
+        $attributes[] = 'name';
         $attributes[] = 'handle';
         $attributes[] = 'template';
+        $attributes[] = 'uid';
+        $attributes[] = 'sortOrder';
         $attributes[] = 'dateCreated';
         $attributes[] = 'dateUpdated';
+        $attributes[] = 'dateDeleted';
 
         return $attributes;
     }
@@ -126,7 +121,7 @@ class Invoice extends Element
      */
     protected static function defineSearchableAttributes(): array
     {
-        return ['title', 'handle'];
+        return ['name', 'handle'];
     }
 
     /**
@@ -135,7 +130,7 @@ class Invoice extends Element
     protected static function defineSortOptions(): array
     {
         return [
-            'title' => 'app', 'Title',
+            'name' => 'app', 'Name',
             'handle' => 'app', 'Handle',
             [
                 'label' => 'app', 'Date Created',
@@ -160,7 +155,8 @@ class Invoice extends Element
     // =========================================================================
 
     public ?string $handle = null;
-    public ?string $oldHandle = null;
+    public ?string $name = '';
+    public ?string $template = '';
     public ?string $fieldContentTable = null;
     public ?int $defaultStatusId = null;
     public string $dataRetention = 'forever';
@@ -267,8 +263,9 @@ class Invoice extends Element
     {
         $rules = parent::defineRules();
 
-        $rules[] = [['title', 'handle'], 'required'];
-        $rules[] = [['title'], 'string', 'max' => 255];
+        $rules[] = [['name', 'handle'], 'required'];
+        $rules[] = [['name'], 'string', 'max' => 255];
+        $rules[] = [['handle', 'handle'], 'required'];
 
         return $rules;
     }

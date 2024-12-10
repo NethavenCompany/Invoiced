@@ -7,6 +7,7 @@ use nethaven\invoiced\invoiced as invoicedPlugin;
 use nethaven\invoiced\elements\Invoice;
 use nethaven\invoiced\elements\db\InvoiceQuery;
 use nethaven\invoiced\models\Settings;
+use nethaven\invoiced\models\InvoiceTemplate;
 
 
 class Invoiced
@@ -19,21 +20,13 @@ class Invoiced
         return InvoicedPlugin::$plugin->getInvoiceTemplates()->getAllTemplates();
     }
 
-    // /**
-    //  * @param null $criteria
-    //  * @return InvoiceQuery
-    //  */
-    // public function invoices($criteria = null): InvoiceQuery
-    // {
-    //     $query = Invoice::find();
-
-    //     if ($criteria) {
-    //         Craft::configure($query, $criteria);
-    //     }
-
-    //     /* @var FormQuery $query */
-    //     return $query;
-    // }
+    /**
+     * @return InvoiceTemplate
+     */
+    public function getInvoiceTemplateById(int $id): InvoiceTemplate
+    {
+        return InvoicedPlugin::$plugin->getInvoiceTemplates()->getTemplateById($id);
+    }
 
     /**
      * Returns plugin class.
@@ -68,8 +61,7 @@ class Invoiced
     public function getSettingsNavItems(): array
     {
         $navItems = [
-            'invoices' => ['title' => 'Invoices'],
-
+            'general' => ['title' => 'General'],
             'appearance-heading' => ['heading' => 'Appearance'],
             'invoice-templates' => ['title' => 'Invoice Templates'],
         ];
