@@ -26,8 +26,17 @@
 ] %}
 
 
-{% set monacoOptions = {
+{% set htmlOptions = {
     language: 'html',
+    theme: 'vs-dark',
+    lineNumbers: 'on',
+    lineNumbersMinChars: 4,
+    lineDecorationsWidth: 6,
+    folding: true,
+} %}
+
+{% set cssOptions = {
+    language: 'css',
     theme: 'vs-dark',
     lineNumbers: 'on',
     lineNumbersMinChars: 4,
@@ -41,13 +50,12 @@
 
 {% block content %}
     <div id="invoice-template-editor">
-        <form method="post" action="{{ url('invoiced/invoice-template/save-template/') }}">
+        <form method="post" action="{{ url('invoiced/invoice-template/save') }}">
             {{ csrfInput() }}
             {{ redirectInput('invoiced/settings/invoice-templates') }}
 
             {% if templateId %}
                 <input type="hidden" name="id" value="{{ templateId }}">
-                <input type="hidden" name="sortOrder" value="{{ sortOrder }}">
             {% endif %}
             
             <div class="field">
@@ -79,14 +87,28 @@
             <div class="field">
                 <div class="input ltr">
                     {{ codeEditor.textareaField({
-                        label: "Template",
+                        label: "Template HTML",
                         instructions: "Enter your HTML here.",
                         id: 'templateHtml',
                         name: 'templateHtml',
-                        value: template.template ?? '<style>\n</style>\n<body>\n</body>',
+                        value: template.html ?? '<style>\n</style>\n<body>\n</body>',
                         rows: 15,
-                        required: true
-                    }, 'CodeField', monacoOptions, codeEditorOptions) }}
+                        required: false
+                    }, 'CodeField', htmlOptions, codeEditorOptions) }}
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="input ltr">
+                    {{ codeEditor.textareaField({
+                        label: "Template CSS",
+                        instructions: "Enter your CSS here.",
+                        id: 'templateCss',
+                        name: 'templateCss',
+                        value: template.css ?? '',
+                        rows: 15,
+                        required: false
+                    }, 'CodeField', cssOptions, codeEditorOptions) }}
                 </div>
             </div>
 

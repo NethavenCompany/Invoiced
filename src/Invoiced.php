@@ -4,11 +4,14 @@ namespace nethaven\invoiced;
 use Craft;
 use craft\base\Plugin;
 use craft\base\Event as Event;
-use craft\web\twig\variables\CraftVariable;
+use craft\events\RebuildConfigEvent;
+use craft\services\ProjectConfig;
 
 use nethaven\invoiced\base\PluginTrait;
 use nethaven\invoiced\base\Routes;
 use nethaven\invoiced\models\Settings;
+use nethaven\invoiced\services\InvoiceTemplates as TemplateService;
+use nethaven\invoiced\helpers\ProjectConfigHelper;
 
 
 class Invoiced extends Plugin
@@ -51,6 +54,7 @@ class Invoiced extends Plugin
             $this->_registerVariables();
             $this->_registerComponents();
             $this->_registerCpRoutes();
+            $this->_registerProjectConfigEventHandlers();
         });
         
     }
@@ -62,6 +66,22 @@ class Invoiced extends Plugin
     protected function createSettingsModel(): Settings
     {
         return new Settings();
+    }
+
+    private function _registerProjectConfigEventHandlers(): void
+    {
+        $projectConfigService = Craft::$app->getProjectConfig();
+
+        $invoiceTemplateService = $this->getInvoiceTemplates();
+        $projectConfigService
+            ->onAdd(TemplateService::CONFIG_TEMPLATES_KEY . '.{uid}', [$invoiceTemplateService, 'handleChangedTemplate'])
+            ->onUpdate(TemplateService::CONFIG_TEMPLATES_KEY . '.{uid}', [$invoiceTemplateService, 'handleChangedTemplate'])
+            ->onRemove(TemplateService::CONFIG_TEMPLATES_KEY . '.{uid}', [$invoiceTemplateService, 'handleDeletedTemplate']);
+
+
+        Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
+            $event->config['invoiced'] = ProjectConfigHelper::rebuildProjectConfig();
+        });
     }
 
     // Public Methods

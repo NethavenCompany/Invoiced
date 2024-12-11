@@ -11,6 +11,7 @@ class m241205_100000_create_invoiced_invoices_table extends Migration
     {
         $this->createTable('{{%invoiced_invoices}}', [
             'id' => $this->primaryKey(),
+            'templateId' => $this->integer()->notNull(),
             'invoiceNumber' => $this->string()->notNull(),
             'invoiceDate' => $this->date()->notNull(),
             'expirationDate' => $this->date()->notNull(),
@@ -20,11 +21,12 @@ class m241205_100000_create_invoiced_invoices_table extends Migration
             'subtotal' => $this->decimal(10, 2)->notNull(),
             'vat' => $this->decimal(10, 2)->notNull(),
             'total' => $this->decimal(10, 2)->notNull(),
-            'contact' => $this->string(),
+            'phone' => $this->string(),
+            'email' => $this->string(),
             'address' => $this->text(),
-            'bankDetails' => $this->text(),
+            'cocnumber' => $this->string(),
+            'vatnumber' => $this->string(),
             'uid' => $this->uid(),
-            'templateId' => $this->integer()->notNull(),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),
             'dateDeleted' => $this->dateTime(),

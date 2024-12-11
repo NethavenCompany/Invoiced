@@ -13,7 +13,10 @@ class InvoiceTemplate extends BaseTemplate
     // Properties
     // =========================================================================
 
+    public string $html = '';
+    public string $css = '';
     public bool $hasSingleTemplate = true;
+    public ?int $fieldLayoutId = null;
 
     private ?FieldLayout $_fieldLayout = null;
 
@@ -26,7 +29,7 @@ class InvoiceTemplate extends BaseTemplate
     {
         $rules = parent::defineRules();
 
-        $rules[] = ['template', 'required'];
+        // $rules[] = ['template', 'required'];
 
         return $rules;
     }
@@ -72,7 +75,8 @@ class InvoiceTemplate extends BaseTemplate
         $config = [
             'name' => $this->name,
             'handle' => $this->handle,
-            'template' => $this->template,
+            'html' => $this->html,
+            'css' => $this->css,
             'sortOrder' => $this->sortOrder,
         ];
 

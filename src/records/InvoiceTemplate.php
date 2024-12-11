@@ -24,9 +24,4 @@ class InvoiceTemplate extends ActiveRecord
     {
         return Table::INVOICED_INVOICE_TEMPLATES;
     }
-
-    public function getFieldLayout(): ActiveQueryInterface
-    {
-        return $this->hasOne(FieldLayout::class, ['id' => 'fieldLayoutId']);
-    }
 }

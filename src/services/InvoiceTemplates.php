@@ -2,8 +2,9 @@
 namespace nethaven\invoiced\services;
 
 use nethaven\invoiced\invoiced;
-use nethaven\invoiced\events\InvoiceTemplateEvent;
-use nethaven\invoiced\models\InvoiceTemplate;
+use nethaven\invoiced\events\InvoiceTemplateEvent as TemplateEvent;
+use nethaven\invoiced\models\InvoiceTemplate as TemplateModel;
+use nethaven\invoiced\elements\InvoiceTemplate as TemplateElement;
 use nethaven\invoiced\records\InvoiceTemplate as TemplateRecord;
 
 use Craft;
@@ -14,6 +15,7 @@ use craft\events\ConfigEvent;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
+use craft\models\FieldLayout;
 
 use yii\base\ErrorException;
 use yii\base\Exception;
@@ -44,59 +46,26 @@ class InvoiceTemplates extends Component
     // Public Methods
     // =========================================================================
 
-    /**
-     * Returns all templates.
-     *
-     * @return InvoiceTemplate[]
-     */
     public function getAllTemplates(): array
     {
         return $this->_templates()->all();
     }
 
-    /**
-     * Returns a template identified by its ID.
-     *
-     * @param int $id
-     * @return InvoiceTemplate|null
-     */
-    public function getTemplateById(int $id): ?InvoiceTemplate
+    public function getTemplateById(int $id): ?TemplateModel
     {
         return $this->_templates()->firstWhere('id', $id);
     }
 
-    /**
-     * Returns a template identified by its handle.
-     *
-     * @param string $handle
-     * @return InvoiceTemplate|null
-     */
-    public function getTemplateByHandle(string $handle): ?InvoiceTemplate
+    public function getTemplateByHandle(string $handle): ?TemplateModel
     {
         return $this->_templates()->firstWhere('handle', $handle, true);
     }
 
-    /**
-     * Returns a template identified by its UID.
-     *
-     * @param string $uid
-     * @return InvoiceTemplate|null
-     */
-    public function getTemplateByUid(string $uid): ?InvoiceTemplate
+    public function getTemplateByUid(string $uid): ?TemplateModel
     {
         return $this->_templates()->firstWhere('uid', $uid, true);
     }
 
-    /**
-     * Saves templates in a new order by the list of template IDs.
-     *
-     * @param int[] $ids
-     * @return bool
-     * @throws ErrorException
-     * @throws Exception
-     * @throws NotSupportedException
-     * @throws ServerErrorHttpException
-     */
     public function reorderTemplates(array $ids): bool
     {
         $projectConfig = Craft::$app->getProjectConfig();
@@ -113,24 +82,13 @@ class InvoiceTemplates extends Component
         return true;
     }
 
-    /**
-     * Saves the template.
-     *
-     * @param InvoiceTemplate $template
-     * @param bool $runValidation
-     * @return bool
-     * @throws ErrorException
-     * @throws Exception
-     * @throws NotSupportedException
-     * @throws ServerErrorHttpException
-     */
-    public function saveTemplate(InvoiceTemplate $template, bool $runValidation = true): bool
+    public function saveTemplate(TemplateModel $template, bool $runValidation = true): bool
     {
         $isNewTemplate = !(bool)$template->id;
 
         // Fire a 'beforeSaveInvoiceTemplate' event
         if ($this->hasEventHandlers(self::EVENT_BEFORE_SAVE_INVOICE_TEMPLATE)) {
-            $this->trigger(self::EVENT_BEFORE_SAVE_INVOICE_TEMPLATE, new InvoiceTemplateEvent([
+            $this->trigger(self::EVENT_BEFORE_SAVE_INVOICE_TEMPLATE, new TemplateEvent([
                 'template' => $template,
                 'isNew' => $isNewTemplate,
             ]));
@@ -160,8 +118,8 @@ class InvoiceTemplates extends Component
             return false;
         }
 
-        // $configPath = self::CONFIG_TEMPLATES_KEY . '.' . $template->uid;
-        // Craft::$app->getProjectConfig()->set($configPath, $template->getConfig(), "Save the “{$template->handle}” invoice template");
+        $configPath = self::CONFIG_TEMPLATES_KEY . '.' . $template->uid;
+        Craft::$app->getProjectConfig()->set($configPath, $template->getConfig(), "Save the “{$template->handle}” invoice template");
 
         if ($isNewTemplate) {
             $template->id = Db::idByUid('{{%invoiced_invoicetemplates}}', $template->uid);
@@ -174,12 +132,7 @@ class InvoiceTemplates extends Component
         return true;
     }
 
-    /**
-     * Handle template change.
-     *
-     * @param ConfigEvent $event
-     * @throws Throwable
-     */
+
     public function handleChangedTemplate(ConfigEvent $event): void
     {
         $templateUid = $event->tokenMatches[0];
@@ -192,9 +145,26 @@ class InvoiceTemplates extends Component
 
             $templateRecord->name = $data['name'];
             $templateRecord->handle = $data['handle'];
-            $templateRecord->template = $data['template'];
+            $templateRecord->html = $data['html'];
+            $templateRecord->css = $data['css'];
             $templateRecord->sortOrder = $data['sortOrder'];
             $templateRecord->uid = $templateUid;
+
+            if (!empty($data['fieldLayouts'])) {
+                // Save the field layout
+                $layout = FieldLayout::createFromConfig(reset($data['fieldLayouts']));
+                $layout->id = $templateRecord->fieldLayoutId;
+                $layout->type = TemplateElement::class;
+                $layout->uid = key($data['fieldLayouts']);
+                
+                Craft::$app->getFields()->saveLayout($layout, false);
+                
+                $templateRecord->fieldLayoutId = $layout->id;
+            } else if ($templateRecord->fieldLayoutId) {
+                // Delete the main field layout
+                Craft::$app->getFields()->deleteLayoutById($templateRecord->fieldLayoutId);
+                $templateRecord->fieldLayoutId = null;
+            }
 
             if ($wasTrashed = (bool)$templateRecord->dateDeleted) {
                 $templateRecord->restore();
@@ -213,20 +183,14 @@ class InvoiceTemplates extends Component
 
         // Fire an 'afterSaveInvoiceTemplate' event
         if ($this->hasEventHandlers(self::EVENT_AFTER_SAVE_INVOICE_TEMPLATE)) {
-            $this->trigger(self::EVENT_AFTER_SAVE_INVOICE_TEMPLATE, new InvoiceTemplateEvent([
+            $this->trigger(self::EVENT_AFTER_SAVE_INVOICE_TEMPLATE, new TemplateEvent([
                 'template' => $this->getTemplateById($templateRecord->id),
                 'isNew' => $isNewTemplate,
             ]));
         }
     }
 
-    /**
-     * Delete a template by its id.
-     *
-     * @param int $id
-     * @return bool
-     * @throws Throwable
-     */
+
     public function deleteTemplateById(int $id): bool
     {
         $template = $this->getTemplateById($id);
@@ -238,17 +202,12 @@ class InvoiceTemplates extends Component
         return $this->deleteTemplate($template);
     }
 
-    /**
-     * Deletes a invoice template.
-     *
-     * @param InvoiceTemplate $template The invoice template
-     * @return bool Whether the invoice template was deleted successfully
-     */
-    public function deleteTemplate(InvoiceTemplate $template): bool
+
+    public function deleteTemplate(TemplateModel $template): bool
     {
         // Fire a 'beforeDeleteInvoiceTemplate' event
         if ($this->hasEventHandlers(self::EVENT_BEFORE_DELETE_INVOICE_TEMPLATE)) {
-            $this->trigger(self::EVENT_BEFORE_DELETE_INVOICE_TEMPLATE, new InvoiceTemplateEvent([
+            $this->trigger(self::EVENT_BEFORE_DELETE_INVOICE_TEMPLATE, new TemplateEvent([
                 'template' => $template,
             ]));
         }
@@ -257,12 +216,7 @@ class InvoiceTemplates extends Component
         return true;
     }
 
-    /**
-     * Handle template being deleted
-     *
-     * @param ConfigEvent $event
-     * @throws Throwable
-     */
+
     public function handleDeletedTemplate(ConfigEvent $event): void
     {
         $uid = $event->tokenMatches[0];
@@ -276,7 +230,7 @@ class InvoiceTemplates extends Component
 
         // Fire a 'beforeApplyInvoiceTemplateDelete' event
         if ($this->hasEventHandlers(self::EVENT_BEFORE_APPLY_INVOICE_TEMPLATE_DELETE)) {
-            $this->trigger(self::EVENT_BEFORE_APPLY_INVOICE_TEMPLATE_DELETE, new InvoiceTemplateEvent([
+            $this->trigger(self::EVENT_BEFORE_APPLY_INVOICE_TEMPLATE_DELETE, new TemplateEvent([
                 'template' => $template,
             ]));
         }
@@ -295,7 +249,7 @@ class InvoiceTemplates extends Component
 
         // Fire an 'afterDeleteInvoiceTemplate' event
         if ($this->hasEventHandlers(self::EVENT_AFTER_DELETE_INVOICE_TEMPLATE)) {
-            $this->trigger(self::EVENT_AFTER_DELETE_INVOICE_TEMPLATE, new InvoiceTemplateEvent([
+            $this->trigger(self::EVENT_AFTER_DELETE_INVOICE_TEMPLATE, new TemplateEvent([
                 'template' => $template,
             ]));
         }
@@ -308,7 +262,7 @@ class InvoiceTemplates extends Component
     /**
      * Returns a memoizable array of all templates.
      *
-     * @return MemoizableArray<InvoiceTemplate>
+     * @return MemoizableArray<TemplateModel>
      */
     private function _templates(): MemoizableArray
     {
@@ -316,7 +270,7 @@ class InvoiceTemplates extends Component
             $templates = [];
 
             foreach ($this->_createTemplatesQuery()->all() as $result) {
-                $templates[] = new InvoiceTemplate($result);
+                $templates[] = new TemplateModel($result);
             }
 
             $this->_templates = new MemoizableArray($templates);
@@ -337,7 +291,8 @@ class InvoiceTemplates extends Component
                 'id',
                 'name',
                 'handle',
-                'template',
+                'html',
+                'css',
                 'sortOrder',
                 'dateDeleted',
                 'uid',
@@ -349,13 +304,6 @@ class InvoiceTemplates extends Component
         return $query;
     }
 
-    /**
-     * Gets a template's record by uid.
-     *
-     * @param string $uid
-     * @param bool $withTrashed Whether to include trashed templates in search
-     * @return TemplateRecord
-     */
     private function _getTemplateRecord(string $uid, bool $withTrashed = false): TemplateRecord
     {
         $query = $withTrashed ? TemplateRecord::findWithTrashed() : TemplateRecord::find();

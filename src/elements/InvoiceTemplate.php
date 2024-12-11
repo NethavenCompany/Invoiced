@@ -156,7 +156,8 @@ class InvoiceTemplate extends Element
 
     public ?string $handle = null;
     public ?string $name = '';
-    public ?string $template = '';
+    public ?string $html = '';
+    public ?string $css = '';
     public ?string $fieldContentTable = null;
     public ?int $defaultStatusId = null;
     public string $dataRetention = 'forever';

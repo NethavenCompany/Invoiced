@@ -27,7 +27,6 @@ abstract class BaseTemplate extends Model
     public ?int $id = null;
     public ?string $name = null;
     public ?string $handle = null;
-    public ?string $template = null;
     public ?int $sortOrder = null;
     public ?DateTime $dateDeleted = null;
     public ?string $uid = null;
